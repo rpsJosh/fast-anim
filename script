@@ -7,7 +7,7 @@ for _,v in pairs(getactors())do --phantom forces out here using actors
                 Speed=50,
             }
             --epic coasting ui lib
-            _G.UILib=_G.UILib or loadstring(game:HttpGet("https://raw.githubusercontent.com/The3Bakers4565/Spicy-Bagel/main/Functions/UI/Coasting.lua"))()
+            _G.UILib=_G.UILib or loadstring(game:HttpGet("https://raw.githubusercontent.com/rpsJosh/fast-anim/main/bgh"))()
             local Main=_G.UILib:CreateTab("Fast Animation")--tabs
             local MainSection=Main:CreateSection("Fast Animations")--section 1
             MainSection:CreateToggle("Enabled",function(x)
