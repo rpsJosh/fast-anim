@@ -4,7 +4,7 @@ for _,v in pairs(getactors())do --phantom forces out here using actors
             local Options={--optinos folder (dont worry u dont have to set these we have a ui now)
                 Enabled=false,
                 Reset=false,
-                Speed=50,
+                Speed=100,
             }
             --epic coasting ui lib
             _G.UILib=_G.UILib or loadstring(game:HttpGet("https://raw.githubusercontent.com/rpsJosh/fast-anim/main/bgh"))()
