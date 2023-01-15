@@ -1,0 +1,48 @@
+for _,v in pairs(getactors())do --phantom forces out here using actors
+    if tostring(v)=="lol"then --actor named lul
+        syn.run_on_actor(v,[[
+            local Options={--optinos folder (dont worry u dont have to set these we have a ui now)
+                Enabled=false,
+                Reset=false,
+                Speed=50,
+            }
+            --epic coasting ui lib
+            _G.UILib=_G.UILib or loadstring(game:HttpGet("https://raw.githubusercontent.com/The3Bakers4565/Spicy-Bagel/main/Functions/UI/Coasting.lua"))()
+            local Main=_G.UILib:CreateTab("Fast Animation")--tabs
+            local MainSection=Main:CreateSection("Fast Animations")--section 1
+            MainSection:CreateToggle("Enabled",function(x)
+                Options.Enabled=x
+            end)
+            MainSection:CreateToggle("Instant Reset Time",function(x)
+                Options.Reset=x
+            end)
+            MainSection:CreateSlider("Speed Multiplier",0,100,50,false,function(x)
+                Options.Speed=x
+            end)
+            for _,v in pairs(getgc())do
+                if debug.getinfo(v).name=="player"then
+                    local a
+                    a=hookfunction(--hook onto animation player function
+                            v,--the animation
+                            function(b,c)--function only had 2 args so we dont need to get args={...}
+                        if Options.Enabled then
+                            if rawget(c,"timescale")then
+                                print(c.timescale)
+                                c.timescale=c.timescale*(1-(Options.Speed/100))--divide timescale to 0
+                                print(c.timescale)
+                            end
+                            if rawget(c,"stdtimescale")then
+                                c.stdtimescale=c.stdtimescale*(1-(Options.Speed/100))
+                            end
+                            if rawget(c,"resettime")and Options.Reset then
+                                c.resettime=0
+                            end
+                        end
+                        return a(b,c)
+                    end)
+                    break
+                end
+            end
+        ]])
+    end
+end
