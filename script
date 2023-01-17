@@ -1,46 +1,162 @@
 for _,v in pairs(getactors())do --phantom forces out here using actors
     if tostring(v)=="lol"then --actor named lul
         syn.run_on_actor(v,[[
+            local IsAlive=function()--check if player is alive
+                if game.Players.LocalPlayer.Character and not game.Workspace:FindFirstChild("MenuLobby")then
+                    return true
+                end
+                return false
+            end
+            local ModVisScope=function(x)--modify scope visibility true for invisible false for visible
+                x=not x
+                for _,v in pairs(game.Players.LocalPlayer.PlayerGui.UnscaledScreenGui.DisplayScope:GetChildren())do
+                    for _,c in pairs(v:GetChildren())do
+                        if c:IsA("Frame")then
+                            c.Visible=x
+                        end
+                    end
+                    if v.Name=="ImageFrontLayer"then
+                        v.Visible=x
+                    elseif v.Name=="ImageRearLayer"then
+                        v.Image=x and "rbxassetid://981376749"or ""--epic id
+                    end
+                end
+            end
             local Options={--optinos folder (dont worry u dont have to set these we have a ui now)
                 Enabled=false,
+                Animation=false,
                 Reset=false,
-                Speed=100,
+                Sway=false,
+                Scope=false,
+                Static=false,
+                Stable=false,
             }
             --epic coasting ui lib
-            _G.UILib=_G.UILib or loadstring(game:HttpGet("https://raw.githubusercontent.com/rpsJosh/fast-anim/main/bgh"))()
-            local Main=_G.UILib:CreateTab("Fast Animation")--tabs
+            _G.UILib=_G.UILib or loadstring(game:HttpGet("https://raw.githubusercontent.com/The3Bakers4565/Spicy-Bagel/main/Functions/UI/Coasting.lua"))()
+            local Main=_G.UILib:CreateTab("Gun Mods")--tabs
             local MainSection=Main:CreateSection("Fast Animations")--section 1
+            local MiscSection=Main:CreateSection("Misc")--section 1
             MainSection:CreateToggle("Enabled",function(x)
                 Options.Enabled=x
+                ModVisScope(Options.Enabled and Options.Scope)
             end)
-            MainSection:CreateToggle("Instant Reset Time",function(x)
+            MainSection:CreateToggle("Instant Animations",function(x)
+                Options.Animation=x
+            end)
+            MainSection:CreateToggle("Instant Reset Animations",function(x)
                 Options.Reset=x
             end)
-            MainSection:CreateSlider("Speed Multiplier",0,100,50,false,function(x)
-                Options.Speed=x
+            MiscSection:CreateToggle("Remove Walking Sway",function(x)
+                Options.Sway=x
             end)
-            for _,v in pairs(getgc())do
-                if debug.getinfo(v).name=="player"then
-                    local a
-                    a=hookfunction(--hook onto animation player function
-                            v,--the animation
-                            function(b,c)--function only had 2 args so we dont need to get args={...}
-                        if Options.Enabled then
-                            if rawget(c,"timescale")then
-                                print(c.timescale)
-                                c.timescale=c.timescale*(1-(Options.Speed/100))--divide timescale to 0
-                                print(c.timescale)
+            MiscSection:CreateToggle("Remove Black Scope",function(x)
+                Options.Scope=x
+                ModVisScope(Options.Enabled and Options.Scope)
+            end)
+            MiscSection:CreateToggle("Static Cam",function(x)
+                Options.Static=x
+            end)
+            MiscSection:CreateToggle("Stable Gun",function(x)
+                Options.Stable=x
+            end)
+            for _,v in pairs(getgc(true))do
+                if type(v)=="table"then
+                    if rawget(v,"walkSway")then
+                        print("walksway")
+                        local a
+                        a=hookfunction(v.walkSway,function(...)--was .gunbob before but now its walksway
+                            if Options.Enabled and Options.Sway then
+                                return CFrame.new()
                             end
-                            if rawget(c,"stdtimescale")then
-                                c.stdtimescale=c.stdtimescale*(1-(Options.Speed/100))
+                            return a(...)
+                        end)
+                    end
+                elseif type(v)=="function"then
+                    if debug.getinfo(v).name=="player"then
+                        print("player")
+                        local an
+                        an=hookfunction(v,function(b,c)
+                            if Options.Enabled and Options.Animation then
+                                if rawget(c,"timescale")then
+                                    c.timescale=0--i realized the timescale was fuckin up so heres fixed one
+                                end
+                                if rawget(c,"stdtimescale")then
+                                    c.stdtimescale=0
+                                end
                             end
-                            if rawget(c,"resettime")and Options.Reset then
+                            if rawget(c,"resettime")and Options.Enabled and Options.Reset then
                                 c.resettime=0
                             end
+                            return an(b,c)
+                        end)
+                    end
+                end
+            end
+            local cam=Vector2.new()
+            local mt=getrawmetatable(game)
+            local oldNamecall=mt.__namecall
+            local oldIndex=mt.__index
+            setreadonly(mt,false)
+            mt.__namecall=newcclosure(function(a,b,c,d,e,...)--old method but still works
+                local method=getnamecallmethod()
+                if tostring(method)=="FireServer"and Options.Enabled and c=="repupdate"then
+                    cam=e--camera angle (couldnt find it in getgc sorry)
+                end
+                return oldNamecall(a,b,c,d,e,...)
+            end)
+            game.Workspace.CurrentCamera:GetPropertyChangedSignal("CFrame"):Connect(function()
+                if Options.Enabled and Options.Static and IsAlive()then--simple static like previous update
+                    game.Workspace.CurrentCamera.CFrame=
+                    CFrame.new(game.Workspace.CurrentCamera.CFrame.Position)*
+                    CFrame.Angles(0,cam.Y,0)*
+                    CFrame.Angles(cam.X,0,0)
+                end
+            end)
+            game.Workspace.CurrentCamera.ChildAdded:Connect(function(x)--wow im not using render stepped :!:!:>!>!>!>?!?!?!?
+                if x.Name=="Main"and x:FindFirstChild("Trigger")then
+                    x.Trigger.Motor6D:GetPropertyChangedSignal("C0"):Connect(function()
+                        if Options.Stable and Options.Enabled then
+                            if x.Trigger.Motor6D.C0~=CFrame.new(x.Trigger.Motor6D.C0.Position)*CFrame.Angles(cam.X,0,0)then
+                                x.Trigger.Motor6D.C0=
+                                CFrame.new(x.Trigger.Motor6D.C0.Position)*
+                                CFrame.Angles(cam.X,0,0)
+                            end
                         end
-                        return a(b,c)
                     end)
-                    break
+                else
+                    if x:FindFirstChild("Arm")then--we remove arms because they mes up on stable
+                        x.Arm.Motor6D:GetPropertyChangedSignal("C0"):Connect(function()
+                            if Options.Stable and Options.Enabled then
+                                if x.Arm.Motor6D.C0~=CFrame.new(100,0,0)and game.Workspace.CurrentCamera:FindFirstChild("Main")and not game.Workspace.CurrentCamera.Main:FindFirstChild("Handle")then
+                                    x.Arm.Motor6D.C0=CFrame.new(100,0,0)
+                                end
+                            end
+                        end)
+                    end
+                end
+            end)
+            for _,v in pairs(game.Workspace.CurrentCamera:GetChildren())do--quick fix
+                if v.Name=="Main"and v:FindFirstChild("Trigger")then
+                    v.Trigger.Motor6D:GetPropertyChangedSignal("C0"):Connect(function()
+                        if Options.Stable and Options.Enabled then
+                            if v.Trigger.Motor6D.C0~=CFrame.new(v.Trigger.Motor6D.C0.Position)*CFrame.Angles(cam.X,0,0)then
+                                v.Trigger.Motor6D.C0=
+                                CFrame.new(v.Trigger.Motor6D.C0.Position)*
+                                CFrame.Angles(cam.X,0,0)
+                                print(cam)
+                            end
+                        end
+                    end)
+                else
+                    if v:FindFirstChild("Arm")then
+                        v.Arm.Motor6D:GetPropertyChangedSignal("C0"):Connect(function()
+                            if Options.Stable and Options.Enabled then
+                                if v.Arm.Motor6D.C0~=CFrame.new(100,0,0)and game.Workspace.CurrentCamera:FindFirstChild("Main")and not game.Workspace.CurrentCamera.Main:FindFirstChild("Handle")then
+                                    v.Arm.Motor6D.C0=CFrame.new(100,0,0)
+                                end
+                            end
+                        end)
+                    end
                 end
             end
         ]])
